@@ -3,10 +3,12 @@ f = open('game_output.txt', 'w')
 playerYear = 0
 bankAccount = random.randint(1,500)
 stockMarketIndex = True
-stockMarketAccount = random.randint(1,500)
+stockMarketAccount = 0
 playerDeathIndex = playerYear
 playerSavings = .5
 playerStock = .1
+shareCounta = 0
+stockA = 100
 playerLiving = True
 wifeLiving = True
 playerMorgage = 0
@@ -27,7 +29,7 @@ welfareTotal = 0
 playerWidower = False
 marriedState = False
 playerName = "James" #input("Input your name:")
-f.write("Hello " + playerName + ". You were born in Oregon to loving parents who put $" + str(bankAccount) + " in a bank account for you and invested " + str(stockMarketAccount) + " in the stock market for you.")
+print("Hello " + playerName + ". You were born in Oregon to loving parents who put $" + str(bankAccount) + " in a bank account for you.")
 def deathCheck (check): #figure this junk out!
         if check < 50:
                 playerDead = random.randint(1,1000) #1% chance of dying each year
@@ -104,18 +106,20 @@ def randomActsOfProvidence():
                 disaster = random.randint(1000,10000)
                 bankAccount += disaster
                 print("You have struck the jackpot and got a windfall of $" + str(disaster))                                           
-def StockMarket():
-        global stockMarketIndex, stockMarketAccount
-        stockMarketIndex = random.choice([True, False])  # stock market either goes up or down
-        if stockMarketIndex == True:
-                stockMarketAccount *= 1.25
-        else:
-                stockMarketAccount *= .75
-def SharePriceSimulator(check): # not yet implimented
-                upDown = random.randrange(-75,75,1)
-                upDown = (upDown/100) + 1
-                check *= upDown
-                return check
+def SharePriceSimulator(check): #This is the share price algorythm, but I haven't implimented it yet
+        cutOff = 57
+        upDown = random.randrange(1,100,1)
+        AmountTotal = random.randrange(1,20,1)
+        AmountTotal /= 100
+        if cutOff >= upDown:
+                AmountTotal += 1
+                check *= AmountTotal
+        elif cutOff < upDown:
+                AmountTotal = 1 - AmountTotal
+                check *= AmountTotal 
+        if check <= 0:
+                check = 1
+        return check
 def homeOwnership():
         global homeowner, homePaidFor, playerMorgage, bankAccount, stockMarketAccount, costOfLiving, morgagePayment, moragePaidAge
         if homeowner == True:
@@ -144,27 +148,25 @@ def homeOwnership():
                         monthly_rate = morgageRate / 100 / 12
                         morgagePayment = (monthly_rate / (1 - (1 + monthly_rate) ** (-morgageTermMonths))) * homePrice
                         costOfLiving -= morgagePayment                
-def banking():
-        global stockMarketAccount, bankAccount, bankruptcyCount, costOfLiving, welfareStatus
-        if stockMarketAccount >= 500: #if you have more than $500 invested save some
-                transferFunds = stockMarketAccount * playerSavings
-                stockMarketAccount -= transferFunds
-                bankAccount += transferFunds
-                print ("You saved:$" + str('${:,.2f}'.format(transferFunds)))
-        elif bankAccount >= 500: #if you have more than $500 in savings, invest some
-                transferFunds = bankAccount * playerStock
-                bankAccount -= transferFunds
-                stockMarketAccount += transferFunds
-                print ("You invested:$" + str('${:,.2f}'.format(transferFunds)))
-        elif bankAccount <= 0:
-                print("You have gone bankrupt. You are now living on welfare")
-                bankAccount = 0
-                welfareStatus = True
-                yearsOnWelfare = 0
-                stockMarketAccount = 0
-                bankruptcyCount += 1
+def investments():
+        global stockMarketAccount, bankAccount, bankruptcyCount, costOfLiving, welfareStatus, shareCounta, stockA
+        if stockA <= bankAccount * playerStock:
+        	availableFunds = bankAccount * playerStock
+        	shareCount = int(availableFunds/stockA)
+        	transferFunds = shareCount * stockA
+        	bankAccount -= transferFunds
+        	shareCounta += shareCount
+    
+        	print("You bought #" + str(shareCount) + " shares for a total of $" + str(int(transferFunds)))
+        	print("You now have a total of this many shares " + str(shareCounta))
+
+        stockA = SharePriceSimulator(stockA)
 def welfareSystem():
-        global costOfLiving, welfareStatus, bankAccount, yearsOnWelfare, welfareTotal
+        global costOfLiving, welfareStatus, bankAccount, yearsOnWelfare, welfareTotal, welfareStatus, stockMarketAccount, bankruptcyCount
+        if bankAccount <= 0:
+        		bankAccount = 0
+        		welfareStatus = True
+        		bankruptcyCount += 1
         if welfareStatus == True:
                 if bankAccount > costOfLiving:
                         welfareStatus = False
@@ -179,7 +181,6 @@ def stats():
         print("Your name is " + playerName)
         print("You are aged " + str(playerYear))
         print("Your bank account:" + str('${:,.2f}'.format(bankAccount)))
-        print("Your stock market account:" + str('${:,.2f}'.format(stockMarketAccount)))
         if bankruptcyCount >= 1:
                 print("You have gone bankrupt " + str(bankruptcyCount) + " times.")
                 print("You were on welfare for " + str(yearsOnWelfare) + " years and received a total of $" + str(int(welfareTotal)) + ".")
@@ -195,6 +196,8 @@ def stats():
                         print("Your beloved wife #" + str(wifeCount) + " died at the age of " + str(deadWifeAge) + "You were married for " + str(timeMarried))
                 elif playerWidower == False:
                         print("Your beloved wife #"+ str(wifeCount) + " is " + str(wifeAge) + " years old and looks to have lots of life still ahead of her. You were married for " + str(timeMarried) + " years.")        
+        if shareCounta > 0:
+        		print("You have " + str(shareCounta) + " shares worth a total of " + str(int(shareCounta * stockA)))                	
 def ageAYear():
         global playerWidoer, timeMarried, moragePaidAge, deadWifeAge, marriedState, wifeLiving, wifeAge, salary, playerYear, bankAccount, stockMarketIndex, stockMarketAccount, homeowner, playerMorgage, morgagePayment, costOfLiving, homePaidFor
         playerLiving = deathCheck(playerYear)
@@ -223,10 +226,9 @@ def ageAYear():
                 if marriedState == False:
                         marriage()
         bankAccount *= 1.0125
-        StockMarket()
         welfareSystem()
         homeOwnership()
-        banking()
+        investments()
         print("You are aged " + str(playerYear) + " years.")
         #stats() # for debuging
 def finances():
